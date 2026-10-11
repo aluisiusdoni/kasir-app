@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GM Kasir</title>
+<!-- Kad pengenalan app -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1f6b45">
+<!-- Untuk iPad / iPhone -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="GM Kasir">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="icon-192.png">
+<style>
+  html, body { margin:0; height:100%; background:#1f6b45; font-family:-apple-system, system-ui, "Segoe UI", Roboto, sans-serif; overflow:hidden; }
+  /* Kasir Apps Script dipaparkan penuh skrin */
+  #kasir { position:fixed; inset:0; width:100%; height:100%; border:0; background:#f4f3ef;
+           padding-top:env(safe-area-inset-top); box-sizing:border-box; }
+  /* Skrin muat / tiada internet / belum setup */
+  .layar { position:fixed; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center;
+           background:#1f6b45; color:#fff; text-align:center; padding:24px; z-index:5; }
+  .layar.show { display:flex; }
+  .layar img { width:112px; height:112px; border-radius:24px; box-shadow:0 8px 24px rgba(0,0,0,.25); }
+  .layar h1 { font-size:22px; margin:18px 0 6px; }
+  .layar p { margin:4px 0; opacity:.9; max-width:420px; line-height:1.5; }
+  .layar button { margin-top:18px; border:0; border-radius:12px; padding:14px 26px; font-size:17px; font-weight:700;
+                  background:#fff; color:#1f6b45; cursor:pointer; }
+  .putar { width:28px; height:28px; border:4px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%;
+           animation:p 0.9s linear infinite; margin-top:18px; }
+  @keyframes p { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+  ⚙️ SATU-SATUNYA TETAPAN: tampal link kasir Apps Script anda.
+  Ambil dari: Apps Script → Deploy → Manage deployments → kasir → Web app URL
+  Bentuknya: https://script.google.com/macros/s/AKfycb.../exec
+============================================================= -->
+<script>
+  var KASIR_URL = 'TAMPAL_LINK_EXEC_DI_SINI';
+</script>
+
+<div class="layar show" id="muat">
+  <img src="icon-512.png" alt="">
+  <h1>Gudeg Menoreh</h1>
+  <p>Membuka kasir…</p>
+  <div class="putar"></div>
+</div>
+
+<div class="layar" id="offline">
+  <img src="icon-512.png" alt="">
+  <h1>📶 Tiada internet</h1>
+  <p>Kasir perlukan internet untuk simpan jualan.</p>
+  <p>Semak WiFi kedai, atau hidupkan hotspot telefon.</p>
+  <button onclick="cubaLagi()">🔄 Cuba lagi</button>
+</div>
+
+<div class="layar" id="belum">
+  <img src="icon-512.png" alt="">
+  <h1>⚙️ Belum disetup</h1>
+  <p>Buka fail <b>index.html</b> di GitHub dan tampal link kasir (…/exec) pada baris <b>KASIR_URL</b>.</p>
+</div>
+
+<iframe id="kasir" title="Kasir" allow="clipboard-write"></iframe>
+
+<script>
+  var $ = function (id) { return document.getElementById(id); };
+  function tunjuk(id) { ['muat', 'offline', 'belum'].forEach(function (x) { $(x).classList.toggle('show', x === id); }); }
+
+  function bukaKasir() {
+    if (!/^https:\/\/script\.google\.com\/.+\/exec/.test(KASIR_URL)) { tunjuk('belum'); return; }
+    if (!navigator.onLine) { tunjuk('offline'); return; }
+    tunjuk('muat');
+    $('kasir').onload = function () { tunjuk(null); };
+    $('kasir').src = KASIR_URL;
+  }
+  function cubaLagi() { $('kasir').src = 'about:blank'; bukaKasir(); }
+
+  // Internet putus / sambung semula
+  window.addEventListener('offline', function () { tunjuk('offline'); });
+  window.addEventListener('online', cubaLagi);
+
+  // Daftar "pembantu latar belakang" (service worker)
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+
+  bukaKasir();
+</script>
+</body>
+</html>
